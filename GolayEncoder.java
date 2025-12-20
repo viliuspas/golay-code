@@ -10,8 +10,12 @@ public class GolayEncoder {
         this.controlMatrix = generateControlMatrix();
     }
 
+    public int getOverflow() {
+        return overflow;
+    }
+
     public int[][] encode(String text) {
-        int[][] vectors = parseString(text, 12);
+        int[][] vectors = parseString(text);
 
         int[][] encodedVectors = new int[vectors.length][vectors[0].length];
 
@@ -26,13 +30,13 @@ public class GolayEncoder {
         return multiply(vector, this.generatorMatrix);
     }
 
-    public String decode(int[][] encodedVectors) {
+    public String decode(int[][] encodedVectors, int overflow) {
         StringBuilder decodedStr = new StringBuilder();
         for (int[] encodedVector : encodedVectors) {
             decodedStr.append(toString(decode(encodedVector)));
         }
 
-        int decodedLength = decodedStr.length() - this.overflow;
+        int decodedLength = decodedStr.length() - overflow;
         byte[] bytes = new byte[decodedLength / 8];
         for (int i = 0, b = 0; i < decodedLength; i += 8, b++) {
             bytes[b] = (byte)Integer.parseInt(decodedStr.substring(i, i + 8), 2);
@@ -63,15 +67,18 @@ public class GolayEncoder {
         return bits.toString();
     }
 
-    private int[][] parseString(String text, int vectorLength) {
+    private int[][] parseString(String text) {
+        int vectorLength = 12;
         byte[] bytes = text.getBytes();
         StringBuilder bits = new StringBuilder();
         for (byte b : bytes) {
             bits.append(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
         }
 
-        this.overflow = vectorLength - (bits.length() % vectorLength);
-        bits.append("0".repeat(this.overflow));
+        int overflow = vectorLength - (bits.length() % vectorLength);
+        bits.append("0".repeat(overflow));
+
+        this.overflow = overflow;
 
         int vectorCount = bits.length() / vectorLength;
         int[][] vectors = new int[vectorCount][vectorLength];

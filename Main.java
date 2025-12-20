@@ -3,11 +3,17 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
         GolayEncoder encoder = new GolayEncoder();
+        Channel channel = new Channel(0.07);
 
         String str = "Šokoladas ir bananas 🤕";
         int[][] encodedStr = encoder.encode(str);
-        randomFlip(encodedStr, 0.08);
-        String decodedStr = encoder.decode(encodedStr);
+
+        channel.send(encodedStr, encoder.getOverflow());
+
+        int[][] receivedData = channel.receive();
+        int safeData = channel.receiveSafeData();
+
+        String decodedStr = encoder.decode(receivedData, safeData);
         System.out.println(decodedStr);
     }
 
@@ -17,14 +23,5 @@ public class Main {
 
         String input =  scanner.nextLine();
         return input.chars().map(c -> c - '0').toArray();
-    }
-
-    public static void randomFlip(int[][] data, double probability) {
-        for (int i = 0; i < data.length; i++) {
-            for (int j = 0; j < data[i].length; j++) {
-                if (Math.random() < probability)
-                    data[i][j] ^= 1;
-            }
-        }
     }
 }
