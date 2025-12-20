@@ -4,7 +4,7 @@ public class Main {
     public static void main(String[] args) {
         GolayEncoder encoder = new GolayEncoder();
 
-        String str = "Long and boring text :)";
+        String str = "Šokoladas ir bananas 🤕";
         int[][] encodedStr = encoder.encode(str);
         randomFlip(encodedStr, 0.08);
         String decodedStr = encoder.decode(encodedStr);

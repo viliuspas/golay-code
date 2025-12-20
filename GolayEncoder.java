@@ -32,13 +32,13 @@ public class GolayEncoder {
             decodedStr.append(toString(decode(encodedVector)));
         }
 
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < decodedStr.length() - this.overflow; i += 8) {
-            String byteStr = decodedStr.substring(i, i + 8);
-            result.append((char)Integer.parseInt(byteStr, 2));
+        int decodedLength = decodedStr.length() - this.overflow;
+        byte[] bytes = new byte[decodedLength / 8];
+        for (int i = 0, b = 0; i < decodedLength; i += 8, b++) {
+            bytes[b] = (byte)Integer.parseInt(decodedStr.substring(i, i + 8), 2);
         }
 
-        return result.toString();
+        return new String(bytes);
     }
 
     public int[] decode(int[] vector) {
@@ -67,7 +67,7 @@ public class GolayEncoder {
         byte[] bytes = text.getBytes();
         StringBuilder bits = new StringBuilder();
         for (byte b : bytes) {
-            bits.append(String.format("%8s", Integer.toBinaryString(b)).replace(' ', '0'));
+            bits.append(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
         }
 
         this.overflow = vectorLength - (bits.length() % vectorLength);
