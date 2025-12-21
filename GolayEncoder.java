@@ -84,12 +84,18 @@ public class GolayEncoder {
     public int[] decode(int[] vector) {
         int[] vector24 = new int[24];
         System.arraycopy(vector, 0, vector24, 0, vector.length);
+
+        // turns vector's length from 23 to 24 by adding a "1" if current sum of values is even or "0" if sum of values is odd.
         vector24[vector24.length - 1] = (Arrays.stream(vector).sum() + 1) % 2;
 
+        // gets a list of bits with value "1" in place where error was found.
         int[] errorPattern = findErrorPattern(vector24, this.controlMatrix);
 
+        // fixes errors by applying binary sum on encoded vector with error pattern.
         int[] result24 = sum(vector24, errorPattern);
         int[] result = new int[12];
+
+        // take first 12 digits of decoded and fixed an array.
         System.arraycopy(result24, 0, result, 0, result.length);
 
         return result;
@@ -133,12 +139,18 @@ public class GolayEncoder {
      */
     private byte[] getDecodedBytes(int[][] encodedVectors, int overflow) {
         StringBuilder decodedStr = new StringBuilder();
+
+        // combine encoded bits into one string.
         for (int[] encodedVector : encodedVectors) {
             decodedStr.append(toString(decode(encodedVector)));
         }
 
+        // get length of original values.
         int decodedLength = decodedStr.length() - overflow;
+
         byte[] bytes = new byte[decodedLength / 8];
+
+        // loop through a string of binary values by assigning 8 bits (1 byte) to byte array.
         for (int i = 0, b = 0; i < decodedLength; i += 8, b++) {
             bytes[b] = (byte)Integer.parseInt(decodedStr.substring(i, i + 8), 2);
         }
@@ -154,10 +166,16 @@ public class GolayEncoder {
     private int[][] parseBytes(byte[] bytes) {
         int vectorLength = 12;
         StringBuilder bits = new StringBuilder();
+
+        // Converts byte array into a string of binary values by:
+        // 1. Integer.toBinaryString(b & 0xFF) turns signed bytes into unsigned bytes and converts them to binary values
+        // 2. "%8s" formats byte string to take 8 spots, by placing existing values to the right
+        // 3. replace(' ', '0') empty values on the left side of 8 bit string are replaced with zeroes.
         for (byte b : bytes) {
             bits.append(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
         }
 
+        // to fill missing vector length add zeroes at the end.
         int overflow = vectorLength - (bits.length() % vectorLength);
         bits.append("0".repeat(overflow));
 
@@ -166,6 +184,7 @@ public class GolayEncoder {
         int vectorCount = bits.length() / vectorLength;
         int[][] vectors = new int[vectorCount][vectorLength];
 
+        // turn bits into array of vectors.
         for (int i = 0; i < vectorCount; i++) {
             for (int j = 0; j < vectorLength; j++) {
                 vectors[i][j] = Integer.parseInt(String.valueOf(bits.charAt(i * vectorLength + j)));
@@ -186,9 +205,12 @@ public class GolayEncoder {
 
         for (int i = 0; i < result.length; i++) {
             int value = 0;
+            // multiply and sum every matrix column with vector values.
             for (int j = 0; j < matrix.length; j++) {
                 value += matrix[j][i] * vector[j];
             }
+
+            // modulus for binary sum.
             result[i] = value % 2;
         }
 
@@ -210,7 +232,7 @@ public class GolayEncoder {
     }
 
     /**
-     * Creates 12 x 23 matrix for encoding.
+     * Creates 12 x 23 matrix for encoding. Left side (first 12 columns) is an Identity matrix. Right side is a 12 x 11 matrix where row i+1 is row i shifted left. Last row contains only values of "1".
      * @return 12 x 23 matrix as 2D integer array.
      */
     private int[][] generateGeneratorMatrix() {
@@ -241,7 +263,7 @@ public class GolayEncoder {
     }
 
     /**
-     * Creates 24 x 12 matrix for parity check.
+     * Creates 24 x 12 matrix for encoding. Top side (first 12 rows) is an Identity matrix. Bottom side is a 12 x 12 matrix where row i+1 is row i shifted left. Last row and last column contain only values of "1" except last index of the matrix.
      * @return  24 x 12 matrix as 2D integer array.
      */
     private int[][] generateControlMatrix() {
@@ -279,7 +301,10 @@ public class GolayEncoder {
      * @return vector with values "1" at indexes of error.
      */
     private int[] findErrorPattern(int[] vector, int[][] controlMatrix) {
+        // syndrome (s) - array of parity check violations.
         int[] syndrome = multiply(vector, controlMatrix);
+
+        // errorPattern (u)
         int[] errorPattern = new int[syndrome.length * 2];
 
         // If wt(s) <= 3 then u = [s,0]
