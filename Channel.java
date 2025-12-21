@@ -26,7 +26,7 @@ public class Channel {
     }
 
     public int receiveSafeData() {
-        return safeData;
+        return this.safeData;
     }
 
     private void randomFlip(int[][] data, double probability) {
