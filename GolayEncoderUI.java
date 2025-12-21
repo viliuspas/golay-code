@@ -204,7 +204,7 @@ public class GolayEncoderUI extends JFrame {
             for (int i = 0; i < vector.length; i++) {
                 String bit = String.valueOf(vectorInput.getText().toCharArray()[i]);
                 int parsedInt = Integer.parseInt(bit);
-                if (parsedInt != 1 && parsedInt != 0) {
+                if ((parsedInt != 1 && parsedInt != 0) || vectorInput.getText().length() != 12) {
                     throw new NumberFormatException();
                 }
                 vector[i] = parsedInt;

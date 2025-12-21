@@ -4,10 +4,16 @@ import java.nio.file.Path;
 import java.util.Arrays;
 
 public class GolayEncoder {
+    // 12 x 23 matrix for encoding
     private final int[][] generatorMatrix;
+
+    // 24 x 12 parity check matrix
     private final int[][] controlMatrix;
+
+    // Amount of added bits to missing vector length
     private int overflow;
 
+    // On Init generate unchanging Matrices
     public GolayEncoder() {
         this.generatorMatrix = generateGeneratorMatrix();
         this.controlMatrix = generateControlMatrix();
@@ -17,30 +23,64 @@ public class GolayEncoder {
         return overflow;
     }
 
+    /**
+     * Encodes file to an array of vector arrays given file path
+     * @param path path to file location
+     * @throws IOException when failed to read file
+     * @return array of 23 length encoded vectors
+     */
     public int[][] encodeFile(String path) throws IOException {
         byte[] bytes = Files.readAllBytes(Path.of(path));
         return getEncodedVectors(bytes);
     }
 
+    /**
+     * Encodes string of text to an array of vector arrays
+     * @param text text to encode
+     * @return array of 23 length encoded vectors
+     */
     public int[][] encode(String text) {
         byte[] bytes = text.getBytes();
         return getEncodedVectors(bytes);
     }
 
+    /**
+     * Encodes one vector
+     * @param vector input 12 length vector
+     * @return 23 length encoded vector
+     */
     public int[] encode(int[] vector) {
         return multiply(vector, this.generatorMatrix);
     }
 
+    /**
+     * Decodes and writes encoded vectors to a file.
+     * @param encodedVectors array of 23 length vectors.
+     * @param path location and file name of to be decoded file.
+     * @param overflow number of additional bits to complete full vector.
+     * @throws IOException when failed to write file.
+     */
     public void decodeFile(int[][] encodedVectors, String path, int overflow) throws IOException {
         byte[] bytes = getDecodedBytes(encodedVectors, overflow);
         Files.write(Path.of(path), bytes);
     }
 
+    /**
+     * Decodes an array of 23 length vectors
+     * @param encodedVectors array of 23 length vectors.
+     * @param overflow number of additional bits to complete full vector.
+     * @return decoded text.
+     */
     public String decode(int[][] encodedVectors, int overflow) {
         byte[] bytes = getDecodedBytes(encodedVectors, overflow);
         return new String(bytes);
     }
 
+    /**
+     * Decodes 23 length vector
+     * @param vector 23 length vector.
+     * @return decoded 12 length vector.
+     */
     public int[] decode(int[] vector) {
         int[] vector24 = new int[24];
         System.arraycopy(vector, 0, vector24, 0, vector.length);
@@ -55,6 +95,11 @@ public class GolayEncoder {
         return result;
     }
 
+    /**
+     * Combines values of vector array to a string.
+     * @param vector any length vector.
+     * @return string of bits.
+     */
     public String toString(int[] vector) {
         StringBuilder bits = new StringBuilder();
         for (int bit : vector) {
@@ -63,6 +108,11 @@ public class GolayEncoder {
         return bits.toString();
     }
 
+    /**
+     * Transforms array of unencoded bytes to an array of encoded vectors.
+     * @param bytes array of unencoded bytes.
+     * @return array of binary vectors.
+     */
     private int[][] getEncodedVectors(byte[] bytes) {
         int[][] vectors = parseBytes(bytes);
 
@@ -75,6 +125,12 @@ public class GolayEncoder {
         return encodedVectors;
     }
 
+    /**
+     * Transforms array of binary vectors to array of bytes.
+     * @param encodedVectors array of binary vectors.
+     * @param overflow number of additional bits to complete full vector.
+     * @return array of bytes.
+     */
     private byte[] getDecodedBytes(int[][] encodedVectors, int overflow) {
         StringBuilder decodedStr = new StringBuilder();
         for (int[] encodedVector : encodedVectors) {
@@ -90,6 +146,11 @@ public class GolayEncoder {
         return bytes;
     }
 
+    /**
+     * Transforms array of bytes to an array of binary vectors.
+     * @param bytes array of bytes.
+     * @return array of binary vectors.
+     */
     private int[][] parseBytes(byte[] bytes) {
         int vectorLength = 12;
         StringBuilder bits = new StringBuilder();
@@ -114,6 +175,12 @@ public class GolayEncoder {
         return vectors;
     }
 
+    /**
+     * Method to binary multiply vector with matrix
+     * @param vector array of binary values.
+     * @param matrix 2D array of binary values.
+     * @return multiplied vector and matrix.
+     */
     private int[] multiply(int[] vector, int[][] matrix) {
         int[] result = new int[matrix[0].length];
 
@@ -128,6 +195,12 @@ public class GolayEncoder {
         return result;
     }
 
+    /**
+     * Method to binary sum vectors.
+     * @param vector1 array of binary values.
+     * @param vector2 array of binary values.
+     * @return summed vector.
+     */
     private int[] sum(int[] vector1, int[] vector2) {
         int[] result = new int[vector1.length];
         for (int i = 0; i < result.length; i++) {
@@ -136,6 +209,10 @@ public class GolayEncoder {
         return result;
     }
 
+    /**
+     * Creates 12 x 23 matrix for encoding.
+     * @return 12 x 23 matrix as 2D integer array.
+     */
     private int[][] generateGeneratorMatrix() {
         int[] bFirstLine = {1,1,0,1,1,1,0,0,0,1,0};
         int[] iFirstLine = {1,0,0,0,0,0,0,0,0,0,0,0};
@@ -163,6 +240,10 @@ public class GolayEncoder {
         return matrix;
     }
 
+    /**
+     * Creates 24 x 12 matrix for parity check.
+     * @return  24 x 12 matrix as 2D integer array.
+     */
     private int[][] generateControlMatrix() {
         int[] iFirstLine = {1,0,0,0,0,0,0,0,0,0,0,0};
         int[] bFirstLine = {1,1,0,1,1,1,0,0,0,1,0,1};
@@ -191,6 +272,12 @@ public class GolayEncoder {
         return matrix;
     }
 
+    /**
+     * Algorithm to find error pattern by manipulating parity check matrix with encoded 24 length vector.
+     * @param vector array of 24 binary values.
+     * @param controlMatrix 24 x 12 matrix for parity check.
+     * @return vector with values "1" at indexes of error.
+     */
     private int[] findErrorPattern(int[] vector, int[][] controlMatrix) {
         int[] syndrome = multiply(vector, controlMatrix);
         int[] errorPattern = new int[syndrome.length * 2];
