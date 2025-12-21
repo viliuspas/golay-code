@@ -17,7 +17,13 @@ public class Channel {
 
     public void send(int[][] data, int overflow) {
         this.safeData = overflow;
-        randomFlip(data, this.channelNoise);
+        randomFlip(data, 0, this.channelNoise);
+        this.data = data.clone();
+    }
+
+    public void send(int[][] data, int overflow, int headerSize) {
+        this.safeData = overflow;
+        randomFlip(data, headerSize, this.channelNoise);
         this.data = data.clone();
     }
 
@@ -29,8 +35,9 @@ public class Channel {
         return this.safeData;
     }
 
-    private void randomFlip(int[][] data, double probability) {
-        for (int i = 0; i < data.length; i++) {
+    private void randomFlip(int[][] data, int headerSize, double probability) {
+        int firstIdx = headerSize * 3 / 2;
+        for (int i = firstIdx; i < data.length; i++) {
             for (int j = 0; j < data[i].length; j++) {
                 if (Math.random() < probability)
                     data[i][j] ^= 1;

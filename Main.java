@@ -33,20 +33,19 @@ public class Main {
 
     public static void readImage() {
         GolayEncoder encoder = new GolayEncoder();
-        Channel channel = new Channel(0.07);
+        Channel channel = new Channel(0.5);
 
         try {
-            int[][] encodedImg = encoder.encodeFile("images/psip.bmp");
+            int[][] encodedImg = encoder.encodeFile("images/gryb.bmp");
 
-            channel.send(encodedImg, encoder.getOverflow());
+            channel.send(encodedImg, encoder.getOverflow(), 16);
 
             int[][] receivedData = channel.receive();
             int safeData = channel.receiveSafeData();
-            System.out.println(safeData);
 
             encoder.decodeFile(receivedData, "images/result.bmp", safeData);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.out.println("Error: " + e.getMessage());
         }
     }
 }
