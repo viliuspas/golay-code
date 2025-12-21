@@ -3,8 +3,8 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-//        readText();
-        readImage();
+////        readText();
+//        readImage();
     }
 
     public static int[] readConsoleInput() {

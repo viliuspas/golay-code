@@ -31,6 +31,10 @@ public class Channel {
         return this.data;
     }
 
+    public int[] receiveVector() {
+        return this.data[0];
+    }
+
     public int receiveSafeData() {
         return this.safeData;
     }
