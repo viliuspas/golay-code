@@ -133,7 +133,7 @@ public class GolayEncoderUI extends JFrame {
 
         // Output path
         JTextField outputPath = addTextToPanel(inputPanel, gbc, "Output Path:", "images/result.bmp", 2);
-        JTextField outputCorruptedPath = addTextToPanel(inputPanel, gbc, "Output Path (corrupted):", "images/result_corrupted.bmp", 3);
+        JTextField outputCorruptedPath = addTextToPanel(inputPanel, gbc, "Output Path (not fixed):", "images/result_corrupted.bmp", 3);
 
         // Error rate
         JTextField errorField = addTextToPanel(inputPanel, gbc, "Error Rate:", "0.07", 4);
@@ -220,11 +220,11 @@ public class GolayEncoderUI extends JFrame {
             resultArea.append("Input: " + vectorInput.getText() + "\n");
             resultArea.append("Error Rate: " + errorRate + "\n\n");
 
-            String outputText = sendVector(0, vector);
-            String outputCorruptedText = sendVector(errorRate, vector);
+            String outputText = sendVector(errorRate, vector, true);
+            String outputCorruptedText = sendVector(errorRate, vector, false);
 
             resultArea.append("Output: " + outputText + "\n");
-            resultArea.append("Output (corrupted): " + outputCorruptedText + "\n");
+            resultArea.append("Output (not fixed): " + outputCorruptedText + "\n");
             resultArea.append("Status: Success\n");
             resultArea.append("=".repeat(50) + "\n\n");
 
@@ -254,11 +254,11 @@ public class GolayEncoderUI extends JFrame {
             resultArea.append("Input: " + text + "\n");
             resultArea.append("Error Rate: " + errorRate + "\n\n");
 
-            String decodedText = sendText(0, textInput);
-            String decodedCorruptedText = sendText(errorRate, textInput);
+            String decodedText = sendText(errorRate, textInput, true);
+            String decodedCorruptedText = sendText(errorRate, textInput, false);
 
             resultArea.append("Output: " + decodedText + "\n");
-            resultArea.append("Output (corrupted): " + decodedCorruptedText + "\n");
+            resultArea.append("Output (not fixed): " + decodedCorruptedText + "\n");
             resultArea.append("Status: Success\n");
             resultArea.append("=".repeat(50) + "\n\n");
 
@@ -287,11 +287,11 @@ public class GolayEncoderUI extends JFrame {
             resultArea.append("Error Rate: " + errorRate + "\n");
 
             // Process with Golay encoder
-            String resultPath = sendImage(0, outputPath);
-            String resultCorruptedPath = sendImage(errorRate, outputCorruptedPath);
+            String resultPath = sendImage(errorRate, outputPath, true);
+            String resultCorruptedPath = sendImage(errorRate, outputCorruptedPath, false);
 
             resultArea.append("Output: " + resultPath + "\n");
-            resultArea.append("Output (corrupted): " + resultCorruptedPath + "\n");
+            resultArea.append("Output (not fixed): " + resultCorruptedPath + "\n");
             resultArea.append("Status: Success\n");
             resultArea.append("=".repeat(50) + "\n\n");
 
@@ -304,8 +304,9 @@ public class GolayEncoderUI extends JFrame {
         }
     }
 
-    private String sendVector(double errorRate, int[] vector) {
+    private String sendVector(double errorRate, int[] vector, boolean fixErrors) {
         GolayEncoder encoder = new GolayEncoder();
+        encoder.setFixErrors(fixErrors);
         Channel channel = new Channel(errorRate);
 
         int[] encodedVector = encoder.encode(vector);
@@ -317,8 +318,9 @@ public class GolayEncoderUI extends JFrame {
         return encoder.toString(encoder.decode(receivedData));
     }
 
-    private String sendText(double errorRate, JTextField textInput) {
+    private String sendText(double errorRate, JTextField textInput, boolean fixErrors) {
         GolayEncoder encoder = new GolayEncoder();
+        encoder.setFixErrors(fixErrors);
         Channel channel = new Channel(errorRate);
 
         int[][] encodedText = encoder.encode(textInput.getText());
@@ -330,8 +332,9 @@ public class GolayEncoderUI extends JFrame {
         return encoder.decode(receivedData, safeData);
     }
 
-    private String sendImage(double errorRate, JTextField outputPathLabel) throws IOException {
+    private String sendImage(double errorRate, JTextField outputPathLabel, boolean fixErrors) throws IOException {
         GolayEncoder encoder = new GolayEncoder();
+        encoder.setFixErrors(fixErrors);
         Channel channel = new Channel(errorRate);
 
         int[][] encodedImg = encoder.encodeFile(selectedImageFile.getAbsolutePath());
