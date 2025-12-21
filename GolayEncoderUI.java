@@ -73,7 +73,7 @@ public class GolayEncoderUI extends JFrame {
 
         // Process button
         JButton processTextBtn = new JButton("Process");
-        processTextBtn.addActionListener(_ -> processVector(vectorField, errorField));
+        processTextBtn.addActionListener(e -> processVector(vectorField, errorField));
         panel.add(processTextBtn, BorderLayout.EAST);
 
         return panel;
@@ -98,7 +98,7 @@ public class GolayEncoderUI extends JFrame {
 
         // Process button
         JButton processTextBtn = new JButton("Process");
-        processTextBtn.addActionListener(_ -> processText(textField, errorField));
+        processTextBtn.addActionListener(e -> processText(textField, errorField));
         panel.add(processTextBtn, BorderLayout.EAST);
 
         return panel;
@@ -142,7 +142,7 @@ public class GolayEncoderUI extends JFrame {
 
         // Process button
         JButton processImageBtn = new JButton("Process");
-        processImageBtn.addActionListener(_ -> processImage(outputPath, outputCorruptedPath, errorField));
+        processImageBtn.addActionListener(e -> processImage(outputPath, outputCorruptedPath, errorField));
         panel.add(processImageBtn, BorderLayout.EAST);
 
         return panel;
@@ -174,7 +174,7 @@ public class GolayEncoderUI extends JFrame {
         panel.add(scrollPane, BorderLayout.CENTER);
 
         JButton clearBtn = new JButton("Clear");
-        clearBtn.addActionListener(_ -> resultArea.setText(""));
+        clearBtn.addActionListener(e -> resultArea.setText(""));
         panel.add(clearBtn, BorderLayout.SOUTH);
 
         return panel;
