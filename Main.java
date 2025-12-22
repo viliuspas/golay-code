@@ -32,7 +32,7 @@ public class Main {
             long start = System.currentTimeMillis();
             encoder.decodeFile(receivedData, outputPath, safeData);
             long end = System.currentTimeMillis();
-            return end-start;
+            return end - start;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

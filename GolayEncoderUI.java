@@ -11,6 +11,8 @@ public class GolayEncoderUI extends JFrame {
     private JTextArea resultArea;
     private JLabel imagePathLabel;
     private File selectedImageFile;
+    private String encodedVector;
+    private String receivedVector;
 
     public GolayEncoderUI() {
         setTitle("Golay Encoder");
@@ -69,11 +71,15 @@ public class GolayEncoderUI extends JFrame {
         // Error rate
         JTextField errorField = addTextToPanel(inputPanel, gbc, "Error Rate:", "0.07", 2);
 
+        // Encoded vector input
+        JTextField receivedVectorField = addTextToPanel(inputPanel, gbc, "Received Vector:", "", 3);
+        receivedVectorField.setEditable(false);
+
         panel.add(inputPanel, BorderLayout.CENTER);
 
         // Process button
         JButton processTextBtn = new JButton("Process");
-        processTextBtn.addActionListener(e -> processVector(vectorField, errorField));
+        processTextBtn.addActionListener(e -> processVector(vectorField, receivedVectorField, errorField));
         panel.add(processTextBtn, BorderLayout.EAST);
 
         return panel;
@@ -198,17 +204,13 @@ public class GolayEncoderUI extends JFrame {
         }
     }
 
-    private void processVector(JTextField vectorInput, JTextField errorField) {
-        int[] vector = new int[12];
+    /**
+     * Handles Vector Processing inputs on button press.
+     */
+    private void processVector(JTextField vectorInput, JTextField receivedVectorField, JTextField errorField) {
+        int length = 12;
         try {
-            for (int i = 0; i < vector.length; i++) {
-                String bit = String.valueOf(vectorInput.getText().toCharArray()[i]);
-                int parsedInt = Integer.parseInt(bit);
-                if ((parsedInt != 1 && parsedInt != 0) || vectorInput.getText().length() != 12) {
-                    throw new NumberFormatException();
-                }
-                vector[i] = parsedInt;
-            }
+            int[] vector = getVectorFromString(vectorInput.getText(), length);
 
             double errorRate = Double.parseDouble(errorField.getText());
             if (errorRate < 0 || errorRate > 1) {
@@ -216,24 +218,51 @@ public class GolayEncoderUI extends JFrame {
                 return;
             }
 
-            resultArea.append("=== Processing Vector ===\n");
-            resultArea.append("Input: " + vectorInput.getText() + "\n");
-            resultArea.append("Error Rate: " + errorRate + "\n\n");
+            // if vector has not been sent, send and show received value.
+            if (receivedVectorField.getText().isEmpty()) {
+                encodedVector = getEncodedVector(vector);
+                receivedVector = sendAndReceiveVector(toIntArray(encodedVector), errorRate);
+                receivedVectorField.setText(receivedVector);
 
-            String outputText = sendVector(errorRate, vector, true);
-            String outputCorruptedText = sendVector(errorRate, vector, false);
+                receivedVectorField.setEditable(true);
+            }
+            // if vector was received, let the user append the value and decode it.
+            else {
+                receivedVector = receivedVectorField.getText();
+                length = 23;
+                int[] receivedVector = getVectorFromString(receivedVectorField.getText(), length);
+                String decodedVector = getDecodedVector(receivedVector);
 
-            resultArea.append("Output: " + outputText + "\n");
-            resultArea.append("Output (not fixed): " + outputCorruptedText + "\n");
-            resultArea.append("Status: Success\n");
-            resultArea.append("=".repeat(50) + "\n\n");
+                processVectorResult(vectorInput.getText(), decodedVector, errorRate);
 
-
+                receivedVectorField.setText("");
+                receivedVectorField.setEditable(false);
+            }
         } catch (NumberFormatException e) {
-            showError("Invalid vector. Please enter only 1 or 0 values of length 12.");
+            showError("Invalid vector. Please enter only 1 or 0 values of length " + length + ".");
         } catch (Exception ex) {
-            showError("Error processing vector: " + ex.getMessage());
+            showError("Error: " + ex.getMessage());
         }
+    }
+
+    private void processVectorResult(String inputVector, String decodedVector, double errorRate) {
+        resultArea.append("=== Processing Vector ===\n");
+        resultArea.append("Input: " + inputVector + "\n");
+        resultArea.append("Error Rate: " + errorRate + "\n\n");
+
+        resultArea.append(String.format("%-20s","Encoded vector: ") + encodedVector + "\n");
+        resultArea.append(String.format("%-20s","Received vector: ") + receivedVector + "\n");
+        resultArea.append(String.format("%-20s","Errors at: ") + getErrorsVector(encodedVector, receivedVector) + "\n");
+        resultArea.append(String.format("%-20s","Decoded vector: ") + decodedVector + "\n");
+        resultArea.append("=".repeat(50) + "\n\n");
+    }
+
+    private String getErrorsVector(String encodedVector, String receivedVector) {
+        StringBuilder errorsVector = new StringBuilder();
+        for (int i = 0; i < encodedVector.length(); i++) {
+            errorsVector.append(encodedVector.charAt(i) != receivedVector.charAt(i) ? "1" : "0");
+        }
+        return errorsVector.toString();
     }
 
     private void processText(JTextField textInput, JTextField errorField) {
@@ -259,7 +288,6 @@ public class GolayEncoderUI extends JFrame {
 
             resultArea.append("Output: " + decodedText + "\n");
             resultArea.append("Output (not fixed): " + decodedCorruptedText + "\n");
-            resultArea.append("Status: Success\n");
             resultArea.append("=".repeat(50) + "\n\n");
 
         } catch (NumberFormatException ex) {
@@ -292,7 +320,6 @@ public class GolayEncoderUI extends JFrame {
 
             resultArea.append("Output: " + resultPath + "\n");
             resultArea.append("Output (not fixed): " + resultCorruptedPath + "\n");
-            resultArea.append("Status: Success\n");
             resultArea.append("=".repeat(50) + "\n\n");
 
         } catch (NumberFormatException ex) {
@@ -304,18 +331,26 @@ public class GolayEncoderUI extends JFrame {
         }
     }
 
-    private String sendVector(double errorRate, int[] vector, boolean fixErrors) {
+    private String getEncodedVector(int[] vector) {
         GolayEncoder encoder = new GolayEncoder();
-        encoder.setFixErrors(fixErrors);
-        Channel channel = new Channel(errorRate);
 
         int[] encodedVector = encoder.encode(vector);
+        return encoder.toString(encodedVector);
+    }
+
+    private String sendAndReceiveVector(int[] encodedVector, double errorRate) {
+        GolayEncoder encoder = new GolayEncoder();
+        Channel channel = new Channel(errorRate);
+
         int[][] encodedVectors = {encodedVector};
         channel.send(encodedVectors, 0);
 
-        int[] receivedData = channel.receiveVector();
+        return encoder.toString(channel.receiveVector());
+    }
 
-        return encoder.toString(encoder.decode(receivedData));
+    private String getDecodedVector(int[] receivedVector) {
+        GolayEncoder encoder = new GolayEncoder();
+        return encoder.toString(encoder.decode(receivedVector));
     }
 
     private String sendText(double errorRate, JTextField textInput, boolean fixErrors) {
@@ -351,6 +386,27 @@ public class GolayEncoderUI extends JFrame {
 
     private void showError(String message) {
         JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private int[] toIntArray(String string) {
+        int[] array = new int[string.length()];
+        for (int i = 0; i < string.length(); i++) {
+            array[i] = Integer.parseInt(String.valueOf(string.charAt(i)));
+        }
+        return array;
+    }
+
+    private int[] getVectorFromString(String vectorString, int length) {
+        int[] vector = new int[length];
+        for (int i = 0; i < vector.length; i++) {
+            String bit = String.valueOf(vectorString.toCharArray()[i]);
+            int parsedInt = Integer.parseInt(bit);
+            if ((parsedInt != 1 && parsedInt != 0) || vectorString.length() != length) {
+                throw new NumberFormatException();
+            }
+            vector[i] = parsedInt;
+        }
+        return vector;
     }
 
     public static void main(String[] args) {

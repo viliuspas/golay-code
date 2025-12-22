@@ -43,8 +43,9 @@ public class Channel {
         int firstIdx = headerSize * 3 / 2;
         for (int i = firstIdx; i < data.length; i++) {
             for (int j = 0; j < data[i].length; j++) {
-                if (Math.random() < probability)
+                if (Math.random() < probability) {
                     data[i][j] ^= 1;
+                }
             }
         }
     }

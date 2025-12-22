@@ -96,11 +96,8 @@ public class GolayEncoder {
         // turns vector's length from 23 to 24 by adding a "1" if current sum of values is even or "0" if sum of values is odd.
         vector24[vector24.length - 1] = (Arrays.stream(vector).sum() + 1) % 2;
 
-        int[] errorPattern = new int[24];
-        if (fixErrors) {
-            // gets a list of bits with value "1" in place where error was found.
-            errorPattern = findErrorPattern(vector24, this.controlMatrix);
-        }
+        // gets a list of bits with value "1" in place where error was found.
+        int[] errorPattern = findErrorPattern(vector24, this.controlMatrix);
 
         // fixes errors by applying binary sum on encoded vector with error pattern.
         int[] result24 = fixErrors ? sum(vector24, errorPattern) : vector24;
@@ -341,7 +338,7 @@ public class GolayEncoder {
         System.arraycopy(controlMatrix, 12, matrixB, 0, matrixB.length);
         int[] syndromeB = multiply(syndrome, matrixB);
 
-        // If wt(s + bi) <= 2 for some row bi of B then u = [s + bi, ei]
+        // If wt(sB) <= 3 then u = [0, sB]
         if (Arrays.stream(syndromeB).sum() <= 3) {
             System.arraycopy(syndromeB, 0, errorPattern, errorPattern.length / 2, syndrome.length);
             return errorPattern;
