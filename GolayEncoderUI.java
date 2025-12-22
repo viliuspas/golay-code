@@ -225,6 +225,8 @@ public class GolayEncoderUI extends JFrame {
                 receivedVectorField.setText(receivedVector);
 
                 receivedVectorField.setEditable(true);
+                vectorInput.setEditable(false);
+                errorField.setEditable(false);
             }
             // if vector was received, let the user append the value and decode it.
             else {
@@ -237,6 +239,8 @@ public class GolayEncoderUI extends JFrame {
 
                 receivedVectorField.setText("");
                 receivedVectorField.setEditable(false);
+                vectorInput.setEditable(true);
+                errorField.setEditable(true);
             }
         } catch (NumberFormatException e) {
             showError("Invalid vector. Please enter only 1 or 0 values of length " + length + ".");
