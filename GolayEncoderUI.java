@@ -315,7 +315,7 @@ public class GolayEncoderUI extends JFrame {
             }
 
             resultArea.append("=== Processing Image ===\n");
-            resultArea.append("Input: " + selectedImageFile.getAbsolutePath() + "\n");
+            resultArea.append("Input: " + selectedImageFile.getPath() + "\n");
             resultArea.append("Error Rate: " + errorRate + "\n");
 
             // Process with Golay encoder
